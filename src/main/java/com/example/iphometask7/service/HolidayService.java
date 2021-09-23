@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 
 @Service
-public class HolidayService {
+public class HolidayService implements IHolidayService {
     public final String URL = "https://date.nager.at/api/v2/";
 
     public boolean checkIsTodayPublicHoliday(String countryCode) throws IOException, InterruptedException {
@@ -74,5 +74,4 @@ public class HolidayService {
         }
         return result;
     }
-
 }

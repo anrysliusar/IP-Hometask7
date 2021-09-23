@@ -1,6 +1,6 @@
 package com.example.iphometask7.controllers;
 
-import com.example.iphometask7.service.HolidayService;
+import com.example.iphometask7.service.IHolidayService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
@@ -14,10 +14,10 @@ import java.util.List;
 
 @ShellComponent
 public class HolidayShellController {
-    private final HolidayService holidayService;
+    private final IHolidayService holidayService;
 
     @Autowired
-    public HolidayShellController(HolidayService holidayService) {
+    public HolidayShellController(IHolidayService holidayService) {
         this.holidayService = holidayService;
     }
 
