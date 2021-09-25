@@ -1,8 +1,10 @@
-package com.example.iphometask7.service;
+package com.example.iphometask7.repositories;
 
-import java.lang.String;
+import com.example.iphometask7.models.Holiday;
+import com.example.iphometask7.models.CountryCode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
 import java.net.URI;
@@ -13,8 +15,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-@Service
-public class HolidayService implements IHolidayService {
+
+@Repository
+public class HolidayRepoImpl implements IHolidayRepo{
     public final String URL = "https://date.nager.at/api/v2/";
 
     public boolean checkIsTodayPublicHoliday(String countryCode) throws IOException, InterruptedException {
@@ -23,10 +26,10 @@ public class HolidayService implements IHolidayService {
         return response.statusCode() == 200;
     }
 
-    public List<HashMap<String, Object>> getNextPublicHolidays(List<String> necessaryKeys, String countryCode) throws IOException, InterruptedException {
+    public List<Holiday> findNextPublicHolidays(String countryCode) throws IOException, InterruptedException {
         String pathName;
         HttpResponse<String> response;
-        if (countryCode.equals("WORLDWIDE")) {
+        if (countryCode.equals(CountryCode.WORLDWIDE.toString())) {
             pathName = "NextPublicHolidaysWorldwide";
             response = getResponse(pathName);
         } else {
@@ -34,20 +37,21 @@ public class HolidayService implements IHolidayService {
             response = getResponse(pathName + "/" + countryCode);
         }
         List<HashMap<String, Object>> read = JsonPath.parse(response.body()).read("$[*]");
-        return filterMapsByNecessaryKeys(read, necessaryKeys);
+
+
+        return listMapToHoliday(read);
 
     }
 
-
-    public List<HashMap<String, Object>> getPublicHolidays(String year, List<String> necessaryKeys, String countryCode) throws IOException, InterruptedException {
+    public List<Holiday> findPublicHolidays(String year, String countryCode) throws IOException, InterruptedException {
         String pathName ="PublicHolidays";
         HttpResponse<String> response = getResponse(pathName + "/" + year + "/" + countryCode);
         List<HashMap<String, Object>> read = JsonPath.parse(response.body()).read("$[*]");
-        return filterMapsByNecessaryKeys(read, necessaryKeys);
+        return listMapToHoliday(read);
     }
 
 
-    public HttpResponse<String> getResponse(String path) throws IOException, InterruptedException {
+    private HttpResponse<String> getResponse(String path) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newBuilder().build();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(URL + path))
@@ -59,19 +63,19 @@ public class HolidayService implements IHolidayService {
         return response;
     }
 
-
-
-    public List<HashMap<String, Object>> filterMapsByNecessaryKeys(List<HashMap<String, Object>> read, List<String> necessaryKeys) {
-        var result = new ArrayList<HashMap<String, Object>>();
-        for (HashMap<String, Object> mapFromRead : read) {
-            var map = new HashMap<String, Object>();
-            for (String necessaryKey : necessaryKeys) {
-                if (mapFromRead.containsKey(necessaryKey)) {
-                    map.put(necessaryKey, mapFromRead.get(necessaryKey));
-                }
+    private List<Holiday> listMapToHoliday(List<HashMap<String, Object>> hashMapList){
+        final ObjectMapper mapper = new ObjectMapper();
+        List<Holiday> holidays = new ArrayList<>();
+        for (HashMap<String, Object> map : hashMapList) {
+            if (map.containsKey("type")){
+                Object type = map.remove("type");
+                map.put("types", List.of(type));
             }
-            result.add(map);
+            Holiday pojo = mapper.convertValue(map, Holiday.class);
+            holidays.add(pojo);
         }
-        return result;
+        return  holidays;
     }
 }
+
+
